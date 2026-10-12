@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Heat is molecular motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ECEFF2; --panel:#FFFFFF; --chamber:#F5F8FA; --ink:#15202A; --muted:#566471;
+  --line:#D2D9DF; --soft:#E4E9ED; --accent:#1B5878; --on-accent:#FFFFFF;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1318; --panel:#151D24; --chamber:#0A0F13; --ink:#E6ECF1; --muted:#97A5B1;
+    --line:#26323C; --soft:#1E2831; --accent:#7CC3E6; --on-accent:#0D1318;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1318; --panel:#151D24; --chamber:#0A0F13; --ink:#E6ECF1; --muted:#97A5B1;
+  --line:#26323C; --soft:#1E2831; --accent:#7CC3E6; --on-accent:#0D1318;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  line-height:1.5; -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:22px 18px 64px}
+h1{font-size:clamp(2.1rem,5.6vw,3.6rem); line-height:.98; font-weight:800; letter-spacing:-.035em; margin:6px 0 12px}
+h2{font-size:1.35rem; line-height:1.2; font-weight:700; letter-spacing:-.015em; margin:0 0 8px}
+h3{font-size:1rem; font-weight:700; margin:0 0 4px}
+.lede{font-family:'Source Serif 4',Georgia,serif; font-size:1.15rem; line-height:1.55; max-width:60ch; color:var(--muted); margin:0 0 24px}
+.credit{margin:-10px 0 24px; padding-left:12px; border-left:3px solid var(--accent); font-size:.95rem; line-height:1.5; color:var(--muted)}
+.credit b{color:var(--ink); font-weight:600}
+.card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px}
+canvas{display:block; width:100%}
+.lab{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:16px; align-items:start}
+.stack{display:grid; gap:16px; min-width:0}
+@media (max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}}
+
+/* chamber */
+#sim{aspect-ratio:3/2; border-radius:9px; background:var(--chamber); border:1px solid var(--line)}
+.caption{display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; justify-content:space-between; margin:10px 2px 0; font-size:.88rem; color:var(--muted)}
+.legend{display:flex; align-items:center; gap:8px}
+.legend .bar{width:120px; height:8px; border-radius:4px; background:linear-gradient(90deg,#2B5FD9,#1FB5B0 35%,#F2B01E 65%,#E5382B)}
+
+/* temperature */
+.temp{margin-top:14px; padding-top:14px; border-top:1px solid var(--line)}
+.temp-head{display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:4px 16px}
+.bigT{font-size:clamp(2.6rem,7vw,3.8rem); font-weight:800; letter-spacing:-.04em; line-height:1; font-variant-numeric:tabular-nums}
+.bigT small{font-size:.45em; font-weight:600; letter-spacing:0; margin-left:4px; color:var(--muted)}
+.tempnote{color:var(--muted); font-size:.92rem; text-align:right; font-variant-numeric:tabular-nums}
+.ends{display:flex; justify-content:space-between; font-size:.82rem; color:var(--muted); margin-top:4px}
+
+input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:30px; background:transparent; margin:0; cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:8px; border-radius:4px; background:var(--soft)}
+input[type=range]::-moz-range-track{height:8px; border-radius:4px; background:var(--soft)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--panel); border:3px solid var(--ink); margin-top:-7px}
+input[type=range]::-moz-range-thumb{width:16px; height:16px; border-radius:50%; background:var(--panel); border:3px solid var(--ink)}
+input[type=range].heat::-webkit-slider-runnable-track{height:12px; border-radius:6px; background:linear-gradient(90deg,#2B5FD9,#1FB5B0 35%,#F2B01E 65%,#E5382B)}
+input[type=range].heat::-moz-range-track{height:12px; border-radius:6px; background:linear-gradient(90deg,#2B5FD9,#1FB5B0 35%,#F2B01E 65%,#E5382B)}
+input[type=range].heat::-webkit-slider-thumb{width:30px; height:30px; margin-top:-9px}
+input[type=range].heat::-moz-range-thumb{width:24px; height:24px}
+:focus-visible{outline:3px solid var(--accent); outline-offset:2px; border-radius:6px}
+
+/* plot card */
+.plot-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:6px}
+.plot-head p{margin:0; color:var(--muted); font-size:.9rem}
+#dist{aspect-ratio:3/2; touch-action:pan-y; cursor:ew-resize}
+.row{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px}
+.chips{display:flex; flex-wrap:wrap; gap:6px; min-height:26px; margin-top:8px}
+.chip{display:inline-flex; align-items:center; gap:6px; font-size:.85rem; padding:2px 10px 2px 8px; border:1px solid var(--line); border-radius:99px; font-variant-numeric:tabular-nums}
+.chip i{width:10px; height:10px; border-radius:50%; display:inline-block}
+.thresh{display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; margin-top:10px; font-size:.9rem}
+.thresh label{color:var(--muted)}
+.thresh output{min-width:6.5ch; text-align:right; font-variant-numeric:tabular-nums; font-weight:600}
+
+button, select{
+  font:inherit; font-size:.92rem; color:var(--ink); background:var(--panel);
+  border:1px solid var(--line); border-radius:9px; padding:7px 12px; cursor:pointer;
+}
+button:hover, select:hover{border-color:var(--muted)}
+button.primary{background:var(--ink); color:var(--bg); border-color:var(--ink); font-weight:600}
+button.primary:hover{opacity:.9}
+.check{display:inline-flex; align-items:center; gap:7px; font-size:.9rem; color:var(--muted); cursor:pointer}
+.check input{width:17px; height:17px; accent-color:var(--accent)}
+
+/* stats */
+.stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px}
+@media (max-width:700px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px 12px; min-width:0}
+.tile .k{font-size:.8rem; color:var(--muted); line-height:1.25}
+.tile .v{font-size:1.55rem; font-weight:700; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15; margin-top:2px}
+.tile .v small{font-size:.5em; font-weight:600; color:var(--muted); letter-spacing:0; margin-left:3px}
+.tile .s{font-size:.78rem; color:var(--muted); margin-top:2px; font-variant-numeric:tabular-nums}
+
+/* more controls */
+.controls{margin-top:16px; display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px 18px; align-items:end}
+.ctl label{display:flex; justify-content:space-between; font-size:.86rem; color:var(--muted); margin-bottom:2px}
+.ctl label b{color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums}
+.ctl select{width:100%}
+.btns{grid-column:1/-1; display:flex; flex-wrap:wrap; gap:8px}
+.hint{grid-column:1/-1; margin:0; font-size:.88rem; color:var(--muted)}
+
+/* article */
+section.read{margin-top:56px}
+.cols{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; margin:16px 0 22px}
+@media (max-width:760px){.cols{grid-template-columns:minmax(0,1fr)}}
+.xy{aspect-ratio:4/3}
+.cardtitle{font-size:.95rem; font-weight:600; margin:0 0 4px}
+.cardnote{font-size:.85rem; color:var(--muted); margin:6px 0 0}
+.prose{font-family:'Source Serif 4',Georgia,serif; font-size:1.07rem; line-height:1.65; max-width:68ch}
+.prose p{margin:0 0 1em}
+.prose b{font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:700}
+.eq{font-family:'Source Serif 4',Georgia,serif; font-style:italic; font-size:1.3rem; text-align:center; padding:12px 14px; margin:8px 0 18px; background:var(--panel); border:1px solid var(--line); border-radius:12px; max-width:68ch}
+.eq small{display:block; font-style:normal; font-size:.82rem; color:var(--muted); margin-top:4px; font-family:'Bricolage Grotesque',system-ui,sans-serif}
+pre{background:var(--soft); border-radius:10px; padding:14px 16px; overflow-x:auto; font-size:.84rem; line-height:1.55; max-width:100%; margin:6px 0 18px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.tablewrap{overflow-x:auto; margin:6px 0 20px}
+table{border-collapse:collapse; width:100%; min-width:560px; font-size:.92rem}
+th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+th{font-weight:700; color:var(--ink); background:var(--soft)}
+td:first-child{font-weight:600; white-space:nowrap}
+.fine{font-size:.86rem; color:var(--muted); max-width:78ch; margin-top:36px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Heat is molecular motion</h1>
+<p class="lede">A box of colliding gas molecules, simulated live. Raise the temperature and watch every speed shift, the distribution spread out, and the fast tail swell.</p>
+<p class="credit">Project by <b>Jay Aditya Singh</b> (24BCE10482)<br>Submitted to <b>Dr. Satyam Srivastava</b></p>
+
+<div class="lab">
+  <!-- left: chamber + temperature -->
+  <div class="card">
+    <canvas id="sim" role="img" aria-label="Animation of gas molecules bouncing around a box, coloured by speed"></canvas>
+    <div class="caption">
+      <span id="tracer">Ringed molecule: – m/s</span>
+      <span class="legend">slower <span class="bar"></span> faster</span>
+    </div>
+
+    <div class="temp">
+      <div class="temp-head">
+        <div class="bigT"><span id="bigT">300</span><small>K</small></div>
+        <div class="tempnote"><span id="celsius">27 °C</span><br><span id="measured">measured from kinetic energy: 300 K</span></div>
+      </div>
+      <input id="tSlider" class="heat" type="range" min="100" max="1000" step="10" value="300" aria-label="Temperature in kelvin">
+      <div class="ends"><span>100 K, cold</span><span>1000 K, hot</span></div>
+    </div>
+  </div>
+
+  <!-- right: distribution + stats -->
+  <div class="stack">
+    <div class="card">
+      <div class="plot-head">
+        <h2>Speed distribution</h2>
+        <p>Bars: the molecules right now. Line: Maxwell–Boltzmann theory.</p>
+      </div>
+      <canvas id="dist" role="img" aria-label="Histogram of molecule speeds with the Maxwell-Boltzmann curve"></canvas>
+
+      <div class="thresh">
+        <label for="thSlider">Speed threshold</label>
+        <input id="thSlider" type="range" min="100" max="2000" step="10" value="540">
+        <output id="thOut" for="thSlider">540 m/s</output>
+      </div>
+
+      <div class="row">
+        <button id="pinBtn" class="primary">Pin this temperature</button>
+        <button id="refBtn">Pin 100 / 300 / 600 / 1000 K</button>
+        <button id="clearBtn">Clear pins</button>
+        <label class="check"><input id="show3d" type="checkbox"> Real 3D gas curve</label>
+      </div>
+      <div class="chips" id="chips" aria-live="polite"></div>
+    </div>
+
+    <div class="stats">
+      <div class="tile"><div class="k">Mean speed</div><div class="v" id="sMean">–</div><div class="s" id="sMeanSub"></div></div>
+      <div class="tile"><div class="k">Root-mean-square speed</div><div class="v" id="sRms">–</div><div class="s" id="sRmsSub"></div></div>
+      <div class="tile"><div class="k">Mean kinetic energy</div><div class="v" id="sKE">–</div><div class="s" id="sKESub"></div></div>
+      <div class="tile"><div class="k" id="sFracK">Faster than –</div><div class="v" id="sFrac">–</div><div class="s" id="sFracSub"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-top:16px">
+  <div class="controls">
+    <div class="ctl">
+      <label for="gasSel">Gas</label>
+      <select id="gasSel"></select>
+    </div>
+    <div class="ctl">
+      <label for="nSlider">Molecules <b id="nOut">160</b></label>
+      <input id="nSlider" type="range" min="40" max="250" step="10" value="160">
+    </div>
+    <div class="ctl">
+      <label for="pbSlider">Playback speed <b id="pbOut">1.0×</b></label>
+      <input id="pbSlider" type="range" min="0.1" max="2" step="0.1" value="1">
+    </div>
+    <div class="ctl">
+      <label for="wallSel">Box edges</label>
+      <select id="wallSel">
+        <option value="bounce">Bouncing walls</option>
+        <option value="periodic">Periodic (wrap around)</option>
+      </select>
+    </div>
+    <div class="btns">
+      <button id="playBtn">Pause</button>
+      <button id="resetBtn">Restart with a natural spread</button>
+      <button id="equalBtn">Restart with every molecule at one speed</button>
+      <button id="sweepBtn">Sweep 100 → 1000 K</button>
+    </div>
+    <p class="hint">Try the one-speed restart: nothing tells the molecules what distribution to form, yet collisions alone turn the single spike into the Maxwell–Boltzmann curve within a few seconds.</p>
+  </div>
+</div>
+
+<!-- explanation -->
+<section class="read">
+  <h2>Temperature and kinetic energy</h2>
+  <div class="prose">
+    <p>Temperature is a measure of how much translational kinetic energy the average molecule carries. The Boltzmann constant, <i>k</i><sub>B</sub> = 1.38 × 10⁻²³ J/K, converts between kelvin and joules.</p>
+  </div>
+  <div class="eq">⟨½ m v²⟩ = (f / 2) · k<sub>B</sub> T
+    <small>f is the number of directions a molecule can move in: 3 for a real gas (so 3/2 k<sub>B</sub>T), 2 for the flat world in this simulator (so k<sub>B</sub>T).</small>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <p class="cardtitle">Mean kinetic energy against temperature</p>
+      <canvas id="keC" class="xy" role="img" aria-label="Plot of mean kinetic energy against temperature"></canvas>
+      <p class="cardnote">Dots are measured from the simulated molecules, the line is theory. Move the slider or press Sweep to add dots.</p>
+    </div>
+    <div class="card">
+      <p class="cardtitle">Mean speed against temperature</p>
+      <canvas id="spC" class="xy" role="img" aria-label="Plot of mean speed against temperature"></canvas>
+      <p class="cardnote">The curve bends because speed grows with the square root of temperature.</p>
+    </div>
+  </div>
+
+  <div class="prose">
+    <p><b>Energy rises in step with temperature.</b> Double the temperature and the average kinetic energy doubles, which is why the dots on the left fall on a straight line through zero.</p>
+    <p><b>Speed rises more slowly.</b> Kinetic energy goes with v², so speed goes with √T. Doubling the temperature makes a typical molecule only about 41% faster, and heating from 300 K to 1000 K speeds it up by a factor of 1.8.</p>
+    <p><b>Temperature describes the crowd, not any one molecule.</b> At any instant the molecules cover a wide range of speeds, and every collision reshuffles energy between them. Watch the ringed molecule: it speeds up and slows down constantly, while the overall histogram barely changes.</p>
+    <p><b>The fast tail grows fastest.</b> Drag the speed threshold far into the tail and compare 300 K with 600 K. The share of molecules beyond it can grow several-fold while the average speed rises by 41%. That is why chemical reactions and evaporation, which need molecules above some energy, speed up so sharply when things get warm.</p>
+    <p><b>Mass changes speed, not energy.</b> Switch from helium to xenon at the same temperature. The average kinetic energy is identical, but the lighter atoms move √(131/4) ≈ 5.7 times faster.</p>
+  </div>
+</section>
+
+<section class="read">
+  <h2>This is a small molecular dynamics simulation</h2>
+  <div class="prose">
+    <p>Molecular dynamics (MD) follows every particle in a system by applying Newton's laws in many tiny time steps. Nobody sets the speed distribution. It emerges from the collisions, and temperature is something you measure from the particles' kinetic energy: T = 2·KE / (f · N · <i>k</i><sub>B</sub>) summed over all particles.</p>
+    <p>The simulator does exactly that. Each step moves every molecule in a straight line, finds the pairs that touch, and exchanges momentum along the line between their centres. When you move the temperature slider, it rescales all velocities by √(T<sub>new</sub> / T<sub>old</sub>), the simplest kind of thermostat. Production MD codes use the same ingredients with more realistic physics:</p>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Ingredient</th><th>This simulator</th><th>Research MD</th></tr></thead>
+      <tbody>
+        <tr><td>Interaction</td><td>Hard disks that bounce elastically</td><td>Smooth forces from a potential such as Lennard-Jones, U(r) = 4ε[(σ/r)¹² − (σ/r)⁶]</td></tr>
+        <tr><td>Integration</td><td>Straight-line motion plus collisions, 1/480 s steps</td><td>Velocity Verlet with femtosecond steps</td></tr>
+        <tr><td>Dimensions</td><td>2D</td><td>3D</td></tr>
+        <tr><td>Start</td><td>Velocities drawn from a Gaussian, then scaled to the target T</td><td>Maxwell–Boltzmann velocities, then equilibration</td></tr>
+        <tr><td>Temperature control</td><td>Velocity rescaling when the slider moves</td><td>Thermostats such as Nosé–Hoover, Langevin or velocity-rescale</td></tr>
+        <tr><td>Boundaries</td><td>Walls, or the periodic option</td><td>Periodic boundary conditions to mimic a bulk sample</td></tr>
+        <tr><td>Measurements</td><td>Speed histogram, mean KE, tail fraction</td><td>Those plus pressure, diffusion, radial distribution function</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="prose"><p>The core loop of a real MD code looks like this (velocity Verlet):</p></div>
+<pre><code>for (step = 0; step &lt; nSteps; step++) {
+  for (i of atoms) v[i] += 0.5 * dt * F[i] / m;   // half kick from the old forces
+  for (i of atoms) r[i] += dt * v[i];              // drift to new positions
+  F = lennardJonesForces(r);                       // recompute forces from the potential
+  for (i of atoms) v[i] += 0.5 * dt * F[i] / m;   // half kick from the new forces
+  if (step % 10 === 0) {
+    T = 2 * kineticEnergy(v) / (3 * N * kB);       // temperature from KE, as in the tiles above
+  }
+}</code></pre>
+
+  <div class="prose">
+    <p>Hard-disk and hard-sphere collisions are the limit of a very steep repulsive force, and the first computer simulations of liquids in the 1950s used exactly this model. Things to try with it here: the periodic option (molecules leaving one side re-enter on the other, as in an MD box), the one-speed restart (relaxation to equilibrium), and the sweep (an automated temperature scan, the way MD is used to map out properties).</p>
+  </div>
+
+  <p class="fine">Simplifications: molecules are drawn as disks that are far larger relative to the box than real ones, and playback is slowed so that you can follow it; real nitrogen at room conditions collides billions of times per second. Speeds in m/s are real values for the chosen gas and temperature, using the 2D Maxwell–Boltzmann formulas (mean speed √(π k<sub>B</sub>T / 2m), RMS speed √(2 k<sub>B</sub>T / m)). The dashed 3D curve shows what a real gas at the same temperature would do.</p>
+</section>
+
+<p class="fine">Project by Jay Aditya Singh (24BCE10482), submitted to Dr. Satyam Srivastava.</p>
+
+</div>
+
+<script>
+(() => {
+'use strict';
+const KB = 1.380649e-23, AMU = 1.66053907e-27;
+const GASES = [
+  {sym:'He', name:'Helium', u:4.0026},
+  {sym:'Ne', name:'Neon', u:20.18},
+  {sym:'N₂', name:'Nitrogen', u:28.014},
+  {sym:'Ar', name:'Argon', u:39.948},
+  {sym:'CO₂', name:'Carbon dioxide', u:44.01},
+  {sym:'Xe', name:'Xenon', u:131.29}
+];
+const W = 720, H = 480, R = 5.5, PX = 0.3, DT = 1/480, TMAX = 1000, TMIN = 100, NB = 40;
+const PL = {l:50, r:14, t:20, b:42};
+
+let gas = GASES[2], m = gas.u * AMU;
+let N = 160, Tset = 300, playback = 1, periodic = false;
+let paused = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let startMode = 'mb';
+let x, y, vx, vy;
+let VMAX = 2200, vth = 540;
+const hist = new Float64Array(NB);
+let snapHist = true, boost = 0;
+let sMean = 0, sV2 = 0, sFrac = 0, tracerV = 0;
+let yMax = 0;
+let pinned = [];
+const points = new Map();
+let lastChange = performance.now(), recorded = false;
+let sweep = null;
+let frameN = 0;
+
+const $ = id => document.getElementById(id);
+const simC = $('sim'), distC = $('dist'), keC = $('keC'), spC = $('spC');
+
+const sigma = T => Math.sqrt(KB * T / m);
+
+/* ---------- colour ---------- */
+const STOPS = [[0,[43,95,217]], [0.35,[31,181,176]], [0.65,[242,176,30]], [1,[229,56,43]]];
+function gradRGB(t){
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < STOPS.length; i++){
+    if (t <= STOPS[i][0]){
+      const a = STOPS[i-1], b = STOPS[i], f = (t - a[0]) / (b[0] - a[0]);
+      return a[1].map((c, k) => Math.round(c + (b[1][k] - c) * f));
+    }
+  }
+  return STOPS[STOPS.length-1][1];
+}
+const LUT = Array.from({length:64}, (_, i) => 'rgb(' + gradRGB(i/63).join(',') + ')');
+const speedColor = v => LUT[Math.min(63, Math.floor(v / (1.7 * sigma(TMAX)) * 63))];
+const tempColor = T => 'rgb(' + gradRGB(0.7374 * Math.sqrt(T / TMAX)).join(',') + ')';
+
+let TH = {};
+function readTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  const g = n => cs.getPropertyValue(n).trim();
+  TH = {ink:g('--ink'), muted:g('--muted'), line:g('--line'), panel:g('--panel')};
+}
+readTheme();
+if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+
+/* ---------- simulation ---------- */
+function randn(){
+  let u = 0; while (u === 0) u = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random());
+}
+
+function init(mode){
+  startMode = mode || startMode;
+  x = new Float64Array(N); y = new Float64Array(N);
+  vx = new Float64Array(N); vy = new Float64Array(N);
+  const cols = Math.ceil(Math.sqrt(N * W / H)), rows = Math.ceil(N / cols);
+  const cw = W / cols, ch = H / rows;
+  const jit = Math.max(0, Math.min(cw, ch) / 2 - R - 1);
+  for (let i = 0; i < N; i++){
+    const c = i % cols, r = Math.floor(i / cols);
+    x[i] = (c + 0.5) * cw + (Math.random() - 0.5) * 2 * jit;
+    y[i] = (r + 0.5) * ch + (Math.random() - 0.5) * 2 * jit;
+  }
+  const s = sigma(Tset);
+  for (let i = 0; i < N; i++){
+    if (startMode === 'equal'){
+      const a = Math.random() * 2 * Math.PI;
+      vx[i] = Math.cos(a) * 1.2 * s; vy[i] = Math.sin(a) * 1.2 * s;
+    } else { vx[i] = randn() * s; vy[i] = randn() * s; }
+  }
+  let mx = 0, my = 0;
+  for (let i = 0; i < N; i++){ mx += vx[i]; my += vy[i]; }
+  mx /= N; my /= N;
+  let v2 = 0;
+  for (let i = 0; i < N; i++){ vx[i] -= mx; vy[i] -= my; v2 += vx[i]*vx[i] + vy[i]*vy[i]; }
+  const k = Math.sqrt(2 * s * s / (v2 / N));
+  for (let i = 0; i < N; i++){ vx[i] *= k; vy[i] *= k; }
+  snapHist = true; boost = 12;
+  lastChange = performance.now(); recorded = false;
+}
+
+function setT(Tnew){
+  Tnew = Math.max(TMIN, Math.min(TMAX, Tnew));
+  const f = Math.sqrt(Tnew / Tset);
+  for (let i = 0; i < N; i++){ vx[i] *= f; vy[i] *= f; }
+  Tset = Tnew;
+  $('tSlider').value = Tset;
+  boost = 12; lastChange = performance.now(); recorded = false;
+  updateTempReadout();
+}
+
+function step(){
+  const dx0 = PX * DT;
+  for (let i = 0; i < N; i++){
+    let xi = x[i] + vx[i] * dx0, yi = y[i] + vy[i] * dx0;
+    if (periodic){
+      if (xi < 0) xi += W; else if (xi >= W) xi -= W;
+      if (yi < 0) yi += H; else if (yi >= H) yi -= H;
+    } else {
+      if (xi < R){ xi = R; vx[i] = Math.abs(vx[i]); }
+      else if (xi > W - R){ xi = W - R; vx[i] = -Math.abs(vx[i]); }
+      if (yi < R){ yi = R; vy[i] = Math.abs(vy[i]); }
+      else if (yi > H - R){ yi = H - R; vy[i] = -Math.abs(vy[i]); }
+    }
+    x[i] = xi; y[i] = yi;
+  }
+  const D = 2 * R, D2 = D * D, hw = W / 2, hh = H / 2;
+  for (let i = 0; i < N - 1; i++){
+    const xi = x[i], yi = y[i];
+    for (let j = i + 1; j < N; j++){
+      let dx = xi - x[j];
+      if (periodic){ if (dx > hw) dx -= W; else if (dx < -hw) dx += W; }
+      if (dx > D || dx < -D) continue;
+      let dy = yi - y[j];
+      if (periodic){ if (dy > hh) dy -= H; else if (dy < -hh) dy += H; }
+      if (dy > D || dy < -D) continue;
+      const d2 = dx*dx + dy*dy;
+      if (d2 >= D2 || d2 === 0) continue;
+      const d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
+      const dvn = (vx[i] - vx[j]) * nx + (vy[i] - vy[j]) * ny;
+      if (dvn < 0){
+        vx[i] -= dvn * nx; vy[i] -= dvn * ny;
+        vx[j] += dvn * nx; vy[j] += dvn * ny;
+      }
+      const push = (D - d) / 2;
+      x[i] += nx * push; y[i] += ny * push;
+      x[j] -= nx * push; y[j] -= ny * push;
+    }
+  }
+}
+
+/* ---------- measurement ---------- */
+function measure(){
+  const inst = new Float64Array(NB);
+  const bw = VMAX / NB;
+  let sv = 0, sv2 = 0, over = 0;
+  for (let i = 0; i < N; i++){
+    const v2 = vx[i]*vx[i] + vy[i]*vy[i], v = Math.sqrt(v2);
+    sv += v; sv2 += v2;
+    if (v > vth) over++;
+    const b = Math.floor(v / bw);
+    if (b < NB) inst[b]++;
+  }
+  const a = snapHist ? 1 : (boost > 0 ? 0.5 : 0.05);
+  const b = snapHist ? 1 : (boost > 0 ? 0.5 : 0.08);
+  for (let i = 0; i < NB; i++) hist[i] += (inst[i] / (N * bw) - hist[i]) * a;
+  sMean += (sv / N - sMean) * b;
+  sV2 += (sv2 / N - sV2) * b;
+  sFrac += (over / N - sFrac) * b;
+  tracerV = Math.hypot(vx[0], vy[0]);
+  snapHist = false;
+  if (boost > 0) boost--;
+}
+
+/* ---------- drawing helpers ---------- */
+function prep(c){
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = c.clientWidth, h = c.clientHeight;
+  const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  if (c.width !== pw || c.height !== ph){ c.width = pw; c.height = ph; }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  return {ctx, w, h, dpr};
+}
+function niceStep(range, maxTicks){
+  const raw = range / maxTicks, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+}
+const pdf2 = (v, s) => v / (s*s) * Math.exp(-v*v / (2*s*s));
+const pdf3 = (v, s) => Math.sqrt(2/Math.PI) * v*v / (s*s*s) * Math.exp(-v*v / (2*s*s));
+const FONT = "12px 'Bricolage Grotesque', system-ui, sans-serif";
+
+function drawSim(){
+  const {ctx, w} = prep(simC);
+  const k = w / W;
+  ctx.save();
+  ctx.scale(k, k);
+  if (periodic){
+    ctx.setLineDash([6, 6]); ctx.strokeStyle = TH.muted; ctx.lineWidth = 1.5;
+    ctx.strokeRect(1, 1, W - 2, H - 2); ctx.setLineDash([]);
+  }
+  for (let i = 0; i < N; i++){
+    ctx.fillStyle = speedColor(Math.hypot(vx[i], vy[i]));
+    ctx.beginPath(); ctx.arc(x[i], y[i], R, 0, 6.2832); ctx.fill();
+  }
+  ctx.strokeStyle = TH.ink; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x[0], y[0], R + 4, 0, 6.2832); ctx.stroke();
+  ctx.restore();
+}
+
+function drawDist(){
+  const {ctx, w, h} = prep(distC);
+  const pw = w - PL.l - PL.r, ph = h - PL.t - PL.b;
+  const s = sigma(Tset);
+  let peak = 0.6065 / s;
+  for (const p of pinned) peak = Math.max(peak, 0.6065 / sigma(p.T));
+  for (let i = 0; i < NB; i++) peak = Math.max(peak, hist[i]);
+  const target = peak * 1e4 * 1.12;
+  yMax = yMax ? yMax + (target - yMax) * 0.25 : target;
+  const X = v => PL.l + v / VMAX * pw;
+  const Y = d => PL.t + ph - d * 1e4 / yMax * ph;
+
+  ctx.font = FONT; ctx.lineWidth = 1;
+  ctx.strokeStyle = TH.line; ctx.fillStyle = TH.muted;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const ys = niceStep(yMax, 5);
+  for (let t = 0; t <= yMax * 1.001; t += ys){
+    const yy = PL.t + ph - t / yMax * ph;
+    ctx.beginPath(); ctx.moveTo(PL.l, yy); ctx.lineTo(w - PL.r, yy); ctx.stroke();
+    ctx.fillText(+t.toFixed(2) + '%', PL.l - 6, yy);
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  const xs = niceStep(VMAX, 7);
+  for (let v = 0; v <= VMAX; v += xs){
+    ctx.fillText(v, X(v), PL.t + ph + 6);
+  }
+  ctx.fillText('Speed (m/s)', PL.l + pw / 2, h - 16);
+  ctx.save();
+  ctx.translate(12, PL.t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('molecules per 100 m/s', 0, 0);
+  ctx.restore();
+
+  // tail shading under live theory curve
+  ctx.fillStyle = 'rgba(229,56,43,0.18)';
+  ctx.beginPath(); ctx.moveTo(X(vth), Y(0));
+  for (let v = vth; v <= VMAX; v += VMAX / 150) ctx.lineTo(X(v), Y(pdf2(v, s)));
+  ctx.lineTo(X(VMAX), Y(0)); ctx.closePath(); ctx.fill();
+
+  // histogram bars coloured by speed
+  const bwPx = pw / NB;
+  for (let i = 0; i < NB; i++){
+    const top = Y(hist[i]), base = Y(0);
+    ctx.fillStyle = speedColor((i + 0.5) * VMAX / NB);
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(PL.l + i * bwPx + 0.5, top, bwPx - 1, base - top);
+  }
+  ctx.globalAlpha = 1;
+
+  // pinned theory curves
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  for (const p of pinned){
+    const sp = sigma(p.T), col = tempColor(p.T);
+    ctx.strokeStyle = col; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let v = 0; v <= VMAX; v += VMAX / 160){
+      const px = X(v), py = Y(pdf2(v, sp));
+      v === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.fillText(p.T + ' K', X(sp), Y(0.6065 / sp) - 4);
+  }
+
+  // live theory (2D) and optional 3D
+  ctx.strokeStyle = TH.ink; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let v = 0; v <= VMAX; v += VMAX / 160){
+    const px = X(v), py = Y(pdf2(v, s));
+    v === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+  if ($('show3d').checked){
+    ctx.setLineDash([6, 4]); ctx.strokeStyle = TH.muted; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let v = 0; v <= VMAX; v += VMAX / 160){
+      const px = X(v), py = Y(pdf3(v, s));
+      v === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // threshold
+  ctx.strokeStyle = '#E5382B'; ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]);
+  ctx.beginPath(); ctx.moveTo(X(vth), PL.t); ctx.lineTo(X(vth), PL.t + ph); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = TH.ink; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+  ctx.font = "600 13px 'Bricolage Grotesque', system-ui, sans-serif";
+  ctx.fillText('Faster than ' + vth + ' m/s: ' + (sFrac * 100).toFixed(sFrac < 0.1 ? 1 : 0) + '%', w - PL.r - 4, PL.t + 2);
+}
+
+function drawXY(c, cfg){
+  const {ctx, w, h} = prep(c);
+  const l = 52, r = 14, t = 14, b = 40, pw = w - l - r, ph = h - t - b;
+  const X = T => l + T / TMAX * pw, Y = v => t + ph - v / cfg.ymax * ph;
+  ctx.font = FONT; ctx.lineWidth = 1;
+  ctx.strokeStyle = TH.line; ctx.fillStyle = TH.muted;
+  ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+  const ys = niceStep(cfg.ymax, 5);
+  for (let v = 0; v <= cfg.ymax * 1.001; v += ys){
+    ctx.beginPath(); ctx.moveTo(l, Y(v)); ctx.lineTo(w - r, Y(v)); ctx.stroke();
+    ctx.fillText(+v.toFixed(1), l - 6, Y(v));
+  }
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (let T = 0; T <= TMAX; T += 200) ctx.fillText(T, X(T), t + ph + 6);
+  ctx.fillText('Temperature (K)', l + pw / 2, h - 16);
+  ctx.save(); ctx.translate(12, t + ph / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText(cfg.ylabel, 0, 0); ctx.restore();
+
+  ctx.strokeStyle = TH.ink; ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let T = 0; T <= TMAX; T += 10){
+    const px = X(T), py = Y(cfg.f(T));
+    T === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  ctx.setLineDash([3, 4]); ctx.strokeStyle = TH.muted; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(X(Tset), t); ctx.lineTo(X(Tset), t + ph); ctx.stroke();
+  ctx.setLineDash([]);
+
+  for (const p of points.values()){
+    ctx.fillStyle = tempColor(p.T);
+    ctx.strokeStyle = TH.panel; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(p.T), Y(cfg.val(p)), 5.5, 0, 6.2832); ctx.fill(); ctx.stroke();
+  }
+}
+
+function drawPlots2(){
+  drawXY(keC, {ymax: KB * TMAX * 1e21 * 1.08, f: T => KB * T * 1e21, val: p => p.ke, ylabel: 'Mean KE per molecule (10⁻²¹ J)'});
+  drawXY(spC, {ymax: 1.2533 * sigma(TMAX) * 1.08, f: T => 1.2533 * sigma(T), val: p => p.v, ylabel: 'Mean speed (m/s)'});
+}
+
+/* ---------- DOM ---------- */
+function updateTempReadout(){
+  $('bigT').textContent = Math.round(Tset);
+  $('celsius').textContent = Math.round(Tset - 273.15) + ' °C';
+}
+function updateDOM(){
+  const s = sigma(Tset);
+  const ke = 0.5 * m * sV2, Tm = m * sV2 / (2 * KB);
+  $('sMean').innerHTML = Math.round(sMean) + '<small>m/s</small>';
+  $('sMeanSub').textContent = 'theory ' + Math.round(1.2533 * s) + ' m/s';
+  $('sRms').innerHTML = Math.round(Math.sqrt(sV2)) + '<small>m/s</small>';
+  $('sRmsSub').textContent = 'theory ' + Math.round(1.4142 * s) + ' m/s';
+  $('sKE').innerHTML = (ke * 1e21).toFixed(2) + '<small>×10⁻²¹ J</small>';
+  $('sKESub').textContent = 'equals k·T at ' + Math.round(Tset) + ' K';
+  $('sFracK').textContent = 'Faster than ' + vth + ' m/s';
+  $('sFrac').innerHTML = (sFrac * 100).toFixed(sFrac < 0.1 ? 1 : 0) + '<small>%</small>';
+  const th = Math.exp(-vth * vth / (2 * s * s)) * 100;
+  $('sFracSub').textContent = 'theory ' + th.toFixed(th < 10 ? 1 : 0) + '%';
+  $('measured').textContent = 'measured from kinetic energy: ' + Math.round(Tm) + ' K';
+  $('tracer').textContent = 'Ringed molecule: ' + Math.round(tracerV) + ' m/s';
+}
+function renderChips(){
+  const box = $('chips');
+  box.innerHTML = '';
+  for (const p of pinned){
+    const c = document.createElement('span');
+    c.className = 'chip';
+    c.innerHTML = '<i style="background:' + tempColor(p.T) + '"></i>' + p.T + ' K';
+    box.appendChild(c);
+  }
+}
+function setAxis(){
+  VMAX = Math.ceil(4 * sigma(TMAX) / 100) * 100;
+  const th = $('thSlider');
+  th.max = VMAX;
+  vth = Math.round(1.8 * sigma(300) / 10) * 10;
+  th.value = vth; $('thOut').textContent = vth + ' m/s';
+  yMax = 0;
+}
+
+/* ---------- controls ---------- */
+GASES.forEach((g, i) => {
+  const o = document.createElement('option');
+  o.value = i; o.textContent = g.name + ' (' + g.sym + ', ' + g.u + ' u)';
+  if (g === gas) o.selected = true;
+  $('gasSel').appendChild(o);
+});
+
+function stopSweep(){ if (sweep){ sweep = null; $('sweepBtn').textContent = 'Sweep 100 → 1000 K'; } }
+
+$('tSlider').addEventListener('input', e => { stopSweep(); setT(+e.target.value); });
+$('thSlider').addEventListener('input', e => { vth = +e.target.value; $('thOut').textContent = vth + ' m/s'; });
+$('gasSel').addEventListener('change', e => {
+  stopSweep();
+  gas = GASES[+e.target.value]; m = gas.u * AMU;
+  pinned = []; points.clear(); renderChips();
+  setAxis(); init();
+});
+$('nSlider').addEventListener('input', e => { N = +e.target.value; $('nOut').textContent = N; init(); });
+$('pbSlider').addEventListener('input', e => { playback = +e.target.value; $('pbOut').textContent = playback.toFixed(1) + '×'; });
+$('wallSel').addEventListener('change', e => { periodic = e.target.value === 'periodic'; });
+$('playBtn').addEventListener('click', () => { paused = !paused; $('playBtn').textContent = paused ? 'Play' : 'Pause'; });
+$('resetBtn').addEventListener('click', () => { stopSweep(); init('mb'); });
+$('equalBtn').addEventListener('click', () => { stopSweep(); init('equal'); });
+$('sweepBtn').addEventListener('click', () => {
+  if (sweep){ stopSweep(); return; }
+  paused = false; $('playBtn').textContent = 'Pause';
+  points.clear();
+  sweep = {i:0, t:performance.now()};
+  $('sweepBtn').textContent = 'Stop sweep';
+  setT(100);
+});
+$('pinBtn').addEventListener('click', () => {
+  const T = Math.round(Tset);
+  if (pinned.some(p => p.T === T)) return;
+  pinned.push({T});
+  if (pinned.length > 6) pinned.shift();
+  renderChips();
+});
+$('refBtn').addEventListener('click', () => { pinned = [100, 300, 600, 1000].map(T => ({T})); renderChips(); });
+$('clearBtn').addEventListener('click', () => { pinned = []; renderChips(); });
+
+function thFromPointer(e){
+  const rect = distC.getBoundingClientRect();
+  const pw = rect.width - PL.l - PL.r;
+  const v = (e.clientX - rect.left - PL.l) / pw * VMAX;
+  vth = Math.max(100, Math.min(VMAX, Math.round(v / 10) * 10));
+  $('thSlider').value = vth; $('thOut').textContent = vth + ' m/s';
+}
+let dragging = false;
+distC.addEventListener('pointerdown', e => { dragging = true; distC.setPointerCapture(e.pointerId); thFromPointer(e); });
+distC.addEventListener('pointermove', e => { if (dragging) thFromPointer(e); });
+distC.addEventListener('pointerup', () => { dragging = false; });
+distC.addEventListener('pointercancel', () => { dragging = false; });
+
+/* ---------- main loop ---------- */
+const SWEEP_T = [100,200,300,400,500,600,700,800,900,1000];
+let last = performance.now(), acc = 0;
+function frame(now){
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!paused){
+    acc += dt * playback;
+    let n = 0;
+    while (acc >= DT && n < 40){ step(); acc -= DT; n++; }
+    if (n >= 40) acc = 0;
+  }
+  measure();
+
+  if (!recorded && !paused && now - lastChange > 700){
+    recorded = true;
+    points.set(Math.round(Tset / 10) * 10, {T:Tset, ke:0.5 * m * sV2 * 1e21, v:sMean});
+  }
+  if (sweep && now - sweep.t > 900){
+    sweep.i++;
+    if (sweep.i >= SWEEP_T.length){ stopSweep(); }
+    else { sweep.t = now; setT(SWEEP_T[sweep.i]); }
+  }
+
+  drawSim();
+  drawDist();
+  if (frameN % 5 === 0) updateDOM();
+  if (frameN % 6 === 0) drawPlots2();
+  frameN++;
+  requestAnimationFrame(frame);
+}
+
+if (paused) $('playBtn').textContent = 'Play';
+setAxis();
+init('mb');
+updateTempReadout();
+updateDOM();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
